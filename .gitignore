@@ -4,3 +4,10 @@ generated_documents/
 .env
 AGENTS.md
 opencode.json
+.opencode/
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
