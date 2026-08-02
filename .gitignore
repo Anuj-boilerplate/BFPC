@@ -1,0 +1,6 @@
+node_modules/
+generated_documents/
+*.log
+.env
+AGENTS.md
+opencode.json
