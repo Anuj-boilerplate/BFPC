@@ -1,6 +1,8 @@
 # BFPC
 
-Blazing Fast PDF Companion - document parsing layer.
+Blazing Fast PDF Companion - parse documents into blocks, chunk them, embed
+them, and answer natural-language questions with the answer highlighted
+directly on the PDF.
 
 ## Setup
 
@@ -8,29 +10,56 @@ Blazing Fast PDF Companion - document parsing layer.
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
+cd ui
+npm install
+cd ..
 ```
 
 ## Usage
 
+### CLI
+
 ```powershell
-bfpc report.pdf
-bfpc report.pdf --format text
+bfpc parse tests/fixtures/report.pdf
+bfpc parse tests/fixtures/report.pdf --format text
+```
+
+### HTTP API
+
+```powershell
+bfpc serve        # uvicorn on http://127.0.0.1:8000
+```
+
+The API contract lives in `docs/api.md` (single source of truth). Endpoints:
+
+- `POST /api/index`    upload + parse + chunk + embed + index
+- `GET  /api/status`   current active document summary
+- `POST /api/search`   vector search over the active document
+- `GET  /api/document` raw bytes of the active document
+
+### Web UI
+
+```powershell
+cd ui
+npm run dev       # Vite dev server on http://localhost:5173
 ```
 
 ## Structure
 
 ```
-src/bfpc/parser/
-├── models.py          # Source, BlockKind, Block, Page, Document
-├── base.py            # DocumentReader protocol
-├── pdf_reader.py      # PyMuPDF-backed PDF reader
-├── markdown_reader.py # Markdown reader
-├── docx_reader.py     # DocX reader
-└── cli.py             # CLI entry point
+src/bfpc/
+├── parser/       # PDF (PyMuPDF), Markdown, DocX readers + CLI
+├── index/        # chunking strategies, embedding, FAISS vector index
+└── api/          # FastAPI server implementing docs/api.md
+tests/            # pytest suite (contract conformance, readers, chunker, index)
+ui/               # Vite + React + pdf.js frontend
+docs/api.md       # HTTP API contract
 ```
 
 ## Tests
 
 ```powershell
-pytest
+pytest                 # backend
+cd ui; npm test        # frontend unit tests
+cd ui; npm run test:e2e  # Playwright end-to-end (see ui/e2e/run.ps1)
 ```

@@ -51,3 +51,29 @@ def test_strips_bom(reader: MarkdownReader, tmp_path: Path) -> None:
     document = reader.read(path)
     all_text = " ".join(b.text for b in document.pages[0].blocks)
     assert "\ufeff" not in all_text
+
+
+def test_indented_code_block(reader: MarkdownReader, tmp_path: Path) -> None:
+    """4-space-indented lines are a code block, not a paragraph."""
+    path = tmp_path / "indented.md"
+    path.write_text(
+        "Intro paragraph.\n\n"
+        "    def helper():\n"
+        "        return 1\n\n"
+        "Outro paragraph.\n",
+        encoding="utf-8",
+    )
+    document = reader.read(path)
+    texts = [b.text for b in document.pages[0].blocks]
+    code = [t for t in texts if "def helper():" in t]
+    assert len(code) == 1
+    assert "return 1" in code[0]
+
+
+def test_indented_list_items_are_not_code(reader: MarkdownReader, tmp_path: Path) -> None:
+    """Nested list items indented with 4 spaces stay list items."""
+    path = tmp_path / "nested.md"
+    path.write_text("    - alpha\n    - beta\n", encoding="utf-8")
+    document = reader.read(path)
+    kinds = [b.kind for b in document.pages[0].blocks]
+    assert kinds == [BlockKind.LIST]

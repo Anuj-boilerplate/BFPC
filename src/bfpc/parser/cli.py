@@ -41,6 +41,19 @@ def parse_document(path: Path) -> Document:
 
 
 @app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host", help="Address to bind the HTTP server to"),
+    port: int = typer.Option(8000, "--port", help="Port to bind the HTTP server to"),
+) -> None:
+    """Run the local HTTP API (docs/api.md) via uvicorn."""
+    import uvicorn
+
+    from bfpc.api.app import app as api_app
+
+    uvicorn.run(api_app, host=host, port=port)
+
+
+@app.command()
 def parse(
     file: Path = typer.Argument(..., exists=False, help="Path to a PDF, Markdown, or DocX file"),
     format: str = typer.Option("summary", "--format", help="Output mode: 'summary' or 'text'"),

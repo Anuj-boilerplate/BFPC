@@ -2,8 +2,8 @@
 
 Markdown has no paging concept, so the whole file maps to a single page.
 Block kinds are inferred from the line syntax (ATX/Setext headings, list
-markers, fenced code). Table support is left out of v1; pipe rows are
-treated as plain text blocks.
+markers, fenced and indented code). Table support is left out of v1; pipe
+rows are treated as plain text blocks.
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ class MarkdownReader:
         blocks: list[Block] = []
         current: list[str] = []
         fence: str | None = None
+        indented_code = False
         current_kind: BlockKind = BlockKind.TEXT
 
         def flush() -> None:
@@ -56,6 +57,7 @@ class MarkdownReader:
             if line.startswith("```"):
                 if fence is None:
                     flush()
+                    indented_code = False
                     fence = line
                     current_kind = BlockKind.TEXT
                     current.append(line)
@@ -69,6 +71,16 @@ class MarkdownReader:
                 current.append(line)
                 continue
 
+            if indented_code:
+                if line.strip() == "" or not _is_indented_code_line(line):
+                    flush()
+                    indented_code = False
+                    if line.strip() == "":
+                        continue
+                else:
+                    current.append(line)
+                    continue
+
             if line.strip() == "":
                 flush()
                 current_kind = BlockKind.TEXT
@@ -76,13 +88,22 @@ class MarkdownReader:
 
             if line.startswith("#"):
                 flush()
+                indented_code = False
                 blocks.append(Block(text=line, source=Source.MARKDOWN, kind=BlockKind.HEADING))
                 continue
 
             if _is_list_line(line):
                 if current_kind != BlockKind.LIST:
                     flush()
+                    indented_code = False
                     current_kind = BlockKind.LIST
+                current.append(line)
+                continue
+
+            if _is_indented_code_line(line):
+                flush()
+                current_kind = BlockKind.TEXT
+                indented_code = True
                 current.append(line)
                 continue
 
@@ -94,6 +115,11 @@ class MarkdownReader:
 
         flush()
         return blocks
+
+
+def _is_indented_code_line(line: str) -> bool:
+    """True if the line is CommonMark indented code (4+ spaces or a tab)."""
+    return (line.startswith("    ") or line.startswith("\t")) and bool(line.strip())
 
 
 def _is_list_line(line: str) -> bool:

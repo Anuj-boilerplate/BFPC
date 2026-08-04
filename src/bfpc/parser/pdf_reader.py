@@ -15,6 +15,9 @@ from bfpc.parser.models import Block, BlockKind, Document, Page, Source
 
 _HEADING_SIZE_RATIO = 1.2
 
+#: PyMuPDF ``get_text("blocks")`` block type codes (0 = text, 1 = image).
+_BLOCK_TYPE_IMAGE = 1
+
 
 class PdfReader:
     """Parse a PDF into a :class:`Document` using PyMuPDF."""
@@ -70,7 +73,7 @@ class PdfReader:
             x0, y0, x1, y1, text, block_no, block_type = item
             bbox = (float(x0), float(y0), float(x1), float(y1))
 
-            if block_type == 1:  # image block
+            if block_type == _BLOCK_TYPE_IMAGE:
                 blocks.append(Block(text="", source=Source.PDF, kind=BlockKind.IMAGE, bbox=bbox))
                 continue
 
