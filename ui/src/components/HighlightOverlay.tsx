@@ -14,7 +14,7 @@ export default function HighlightOverlay({ highlights, viewport }: HighlightOver
       {highlights.map((highlight, highlightIndex) =>
         highlight.rects.map((bbox, rectIndex) => {
           const box = bboxToBox(bbox, viewport)
-          const className = highlight.rank === 0 ? 'highlight' : 'highlight highlight--secondary'
+          const className = highlight.rank === 0 ? 'highlight highlight--primary' : 'highlight highlight--secondary'
           return (
             <div
               key={`${highlightIndex}-${rectIndex}`}

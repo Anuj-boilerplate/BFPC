@@ -187,12 +187,14 @@ Unknown fields → 422.
   "top_k": 5,
   "hits": [
     {
-      "id": "12-2",
+      "chunk_id": "12-2",
       "text": "2 INT8 (Static Quantization + ORT) Multi-core CPU Server Nodes ...",
       "page": 12,
       "kind": "table",
       "score": 0.7305,
-      "bbox": [45.0, 520.0, 400.0, 545.0]
+      "bbox": [45.0, 520.0, 400.0, 545.0],
+      "snippet": "2 INT8 (Static Quantization + ORT)",
+      "rects": [[45.0, 523.5, 60.1, 535.8], [62.2, 523.5, 145.6, 535.8]]
     }
   ]
 }
@@ -210,12 +212,14 @@ Field contract:
 
 | Field  | Type                 | Always present | Notes |
 |--------|----------------------|----------------|-------|
-| `id`   | string               | yes            | Opaque unique chunk id; must not be parsed by consumers |
+| `chunk_id` | string               | yes            | Opaque unique chunk id; must not be parsed by consumers |
 | `text` | string               | yes            | The chunk's full text |
 | `page` | int                  | yes            | **1-based** page number (`>= 1`); pdf.js page index = `page - 1` |
 | `kind` | string               | yes            | One of `"text"`, `"table"`, `"heading"`, `"list"` |
 | `score`| float                | yes            | Cosine similarity of the normalized embeddings; higher is better |
 | `bbox` | `[x0, y0, x1, y1]` \| null | yes            | PDF-page region of the chunk, **in PDF points** (see §5.4); `null` for non-PDF sources |
+| `snippet` | string \| null      | yes            | Best-matching sentence of the chunk; `null` for non-PDF sources |
+| `rects` | `[[x0, y0, x1, y1], ...]` \| null | yes            | Word-precise rectangles for `snippet` (**in PDF points**, see §5.4): one rect per matched word, in reading order; `null` when localization failed or the source is not PDF |
 
 ### 5.3 Ordering guarantee
 
@@ -235,6 +239,15 @@ insertion order.
   render the page (e.g. `viewport.transform` from pdf.js) and draw a
   rectangle covering `[x0, y0]` to `[x1, y1]`.
 - The bbox covers the union of the block region(s) that produced the chunk.
+- `rects` are **word-precise**: the server matches the snippet's tokens
+  against the page's word spans and returns one rectangle per matched
+  word. Consecutive tokens that match in reading order form the highlight
+  run; a run crossing a line break yields one rect per line. Rects are
+  not merged — clients may union adjacent rects (same line, small gap)
+  for continuous-looking highlights.
+- `rects` is `null` iff the document's `source` is not `"pdf"` or the
+  snippet could not be located on its page (the whole-chunk `bbox` then
+  remains the best highlighting fallback).
 - `bbox` is `null` iff the document's `source` is not `"pdf"`.
 
 ### 5.5 `top_k` clamping
@@ -242,6 +255,12 @@ insertion order.
 `hits.length` equals `min(top_k, chunks)` where `chunks` is the active
 document's chunk count. `top_k` in the response echoes the *requested*
 value, not the clamped one.
+
+The hit shape is frozen: every hit carries **exactly** the eight §5.2
+fields. A hit missing any of them is a server-side contract violation and
+the response is rejected with `500 {"detail": "internal error"}`
+(distinct from 422, which is reserved for client-input errors). Unknown
+*extra* fields on a hit are tolerated and dropped, not rejected.
 
 ### 5.6 Errors
 
@@ -283,11 +302,12 @@ Download the raw bytes of the active document.
 ## 7. Operational contract (backend)
 
 - Chunker used: the registered `"block"` strategy.
-- Embedding model: nomic-embed-text-v1.5 with the documented
-  `search_query:` / `search_document:` instruction prefixes; embeddings are
-  L2-normalized; index is exact cosine (FAISS `IndexFlatIP`).
-- Model loading is lazy and cached for the server's lifetime; the first
-  `POST /api/index` may take significantly longer than subsequent ones.
+- Embedding model: `gemini-embedding-001` (3072-dim, full fidelity) via the
+  Gemini API; documents use `taskType=RETRIEVAL_DOCUMENT` and queries
+  `RETRIEVAL_QUERY`; embeddings are L2-normalized; index is exact cosine
+  (FAISS `IndexFlatIP`).
+- The embedding API key is read from `GEMINI_API_KEY` at first use; no
+  local model is loaded or downloaded.
 - Server runs on `127.0.0.1:8000`; CORS allows origin
   `http://localhost:5173` (and `http://127.0.0.1:5173`).
 - The endpoint set is exactly the four listed in §1. No other endpoints are
@@ -311,4 +331,6 @@ Download the raw bytes of the active document.
 8. Every error is exactly `{"detail": "..."}` with a code from §2.2.
 9. `kinds` in §3.2 always contains exactly `text`, `table`, `heading`,
    `list`, never `image`.
+10. Every hit carries all eight §5.2 fields; a hit missing any field is
+    rejected with 500.
 10. `top_k` outside `1..20` and blank `query` are rejected with 422.

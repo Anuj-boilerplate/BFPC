@@ -13,7 +13,7 @@
   },
   "hits": [
     {
-      "id": "10-1",
+      "chunk_id": "10-1",
       "text": "Deploying the ingestion and motif extraction pipeline locally requires careful optimization of the underlying inference engine to maintain low execution latency",
       "page": 10,
       "kind": "text",
@@ -26,7 +26,7 @@
       ]
     },
     {
-      "id": "11-1",
+      "chunk_id": "11-1",
       "text": "[PyTorch Model (FP32)] \u2500\u2500\u25ba [Calibration Run] \u2500\u2500\u25ba [Scale/Zero-Point Mapping] \u2500\u2500\u25ba [Static INT8 Model]\u200b On Intel and AMD CPU architectures, execution scaling is of",
       "page": 11,
       "kind": "text",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "id": "20-0",
+      "chunk_id": "20-0",
       "text": "63.\u200bmajentik/Qwen3-Embedding-8B-ONNX-FP16 - Hugging Face, https://huggingface.co/majentik/Qwen3-Embedding-8B-ONNX-FP16 64.\u200bonnxruntime inference is way slower t",
       "page": 20,
       "kind": "text",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "id": "1-0",
+      "chunk_id": "1-0",
       "text": "Optimized Local Ingestion and Thematic Motif Extraction Utilizing 768-Dimensional Embedding Architectures",
       "page": 1,
       "kind": "heading",
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "id": "2-0",
+      "chunk_id": "2-0",
       "text": "loss function during contrastive training such that the early dimensions of the vector (e.g., the first 256 or 128 indices) contain the highest-density semantic",
       "page": 2,
       "kind": "text",

@@ -14,7 +14,7 @@ import asyncio
 import json
 
 from fastapi import FastAPI, Request, Response
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -62,6 +62,12 @@ def create_app(service: IndexService | None = None) -> FastAPI:
     @app.exception_handler(RequestValidationError)
     async def _on_validation_error(request: Request, exc: RequestValidationError) -> Response:
         return _detail_response(_first_validation_message(exc), 422)
+
+    @app.exception_handler(ResponseValidationError)
+    async def _on_response_validation_error(request: Request, exc: ResponseValidationError) -> Response:
+        # Retrieval output violated the frozen §5.2 shape (a hit missing a
+        # required field): reject with the standard internal-error envelope.
+        return _detail_response("internal error", 500)
 
     @app.exception_handler(ApiError)
     async def _on_api_error(request: Request, exc: ApiError) -> Response:

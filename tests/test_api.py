@@ -171,7 +171,7 @@ class TestSearch:
         scores = [h["score"] for h in body["hits"]]
         assert scores == sorted(scores, reverse=True)
         for hit in body["hits"]:
-            assert set(hit) == {"id", "text", "page", "kind", "score", "bbox", "snippet", "rects"}
+            assert set(hit) == {"chunk_id", "text", "page", "kind", "score", "bbox", "snippet", "rects"}
             assert hit["page"] >= 1
             assert hit["kind"] in {"text", "table", "heading", "list"}
             assert isinstance(hit["score"], float)
@@ -281,3 +281,36 @@ class TestRobustness:
         response = client.post("/api/index", files={"file": ("big.md", b"x" * 32)})
         assert response.status_code == 422
         assert set(response.json()) == {"detail"}
+
+
+class _IncompleteHitService(IndexService):
+    """Search stub whose hits are missing a required §5.2 field."""
+
+    def search(self, query: str, top_k: int) -> dict:
+        return {
+            "query": query,
+            "top_k": top_k,
+            "hits": [
+                {
+                    "chunk_id": "1-0",
+                    "text": "x",
+                    "page": 1,
+                    # "kind" deliberately absent
+                    "score": 0.5,
+                    "bbox": None,
+                    "snippet": None,
+                    "rects": None,
+                }
+            ],
+        }
+
+
+class TestHitSchemaFreeze:
+    """Retrieval output missing any §5.2 field must be rejected (500)."""
+
+    def test_hit_missing_field_is_rejected(self) -> None:
+        service = _IncompleteHitService(FakeEmbedder())
+        client = TestClient(create_app(service), raise_server_exceptions=False)
+        response = client.post("/api/search", json={"query": "x", "top_k": 5})
+        assert response.status_code == 500
+        assert response.json() == {"detail": "internal error"}

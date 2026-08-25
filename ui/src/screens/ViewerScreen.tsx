@@ -3,6 +3,7 @@ import { ApiError, documentUrl, search } from '../api/client'
 import type { StatusIndexed } from '../api/types'
 import PdfViewer from '../components/PdfViewer'
 import QueryBar from '../components/QueryBar'
+import { mergeRects } from '../lib/geometry'
 import type { Highlight } from '../lib/highlights'
 
 interface ViewerScreenProps {
@@ -35,7 +36,7 @@ export default function ViewerScreen({ status, onToast, onReset }: ViewerScreenP
           .slice(0, 3)
           .map((hit, index) => ({
             page: hit.page,
-            rects: hit.rects ?? (hit.bbox ? [hit.bbox] : []),
+            rects: mergeRects(hit.rects ?? (hit.bbox ? [hit.bbox] : [])),
             rank: index,
           }))
           .filter((h) => h.rects.length > 0)
@@ -55,7 +56,7 @@ export default function ViewerScreen({ status, onToast, onReset }: ViewerScreenP
 
   return (
     <main className="viewer">
-      <header className="viewer__topbar">
+      <header className="viewer__topbar glass">
         <div className="viewer__doc">
           <span className="viewer__filename" title={status.filename}>
             {status.filename}
@@ -64,7 +65,7 @@ export default function ViewerScreen({ status, onToast, onReset }: ViewerScreenP
             {status.source} · {status.pages} pages · {status.chunks} chunks
           </span>
         </div>
-        <button type="button" className="viewer__reset" onClick={onReset}>
+        <button type="button" className="viewer__reset brutal-interactive" onClick={onReset}>
           New document
         </button>
       </header>

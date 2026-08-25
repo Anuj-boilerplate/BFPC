@@ -27,6 +27,7 @@ bfpc parse tests/fixtures/report.pdf --format text
 ### HTTP API
 
 ```powershell
+$env:GEMINI_API_KEY = "..."   # embedding API key (or set it as a system env var)
 bfpc serve        # uvicorn on http://127.0.0.1:8000
 ```
 

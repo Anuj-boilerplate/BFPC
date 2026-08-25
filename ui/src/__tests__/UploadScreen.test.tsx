@@ -77,9 +77,9 @@ describe('UploadScreen', () => {
     const { input } = renderUpload()
     await userEvent.setup().upload(input, pdfFile())
 
-    expect(screen.getByText('Indexing document…')).toBeInTheDocument()
+    expect(screen.getByText('Processing...')).toBeInTheDocument()
 
     resolveIndex(indexResponse)
-    await waitFor(() => expect(screen.queryByText('Indexing document…')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Processing...')).not.toBeInTheDocument())
   })
 })

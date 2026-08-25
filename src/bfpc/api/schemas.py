@@ -32,18 +32,24 @@ class SearchRequest(BaseModel):
 
 
 class Hit(BaseModel):
-    """One retrieval result (contract §5.2)."""
+    """One retrieval result (contract §5.2).
+
+    All eight fields are required: a hit missing any of them fails
+    response validation (500), so retrieval output can never silently
+    drift from the frozen shape. Unknown extra fields are dropped
+    (``extra="ignore"``).
+    """
 
     model_config = ConfigDict(extra="ignore")
 
-    id: str
+    chunk_id: str
     text: str
     page: int
     kind: str
     score: float
     bbox: BBox | None
-    snippet: str | None = None   # NEW: the best-matching sentence
-    rects: list[BBox] | None = None  # NEW: tight rectangles for the snippet
+    snippet: str | None  # best-matching sentence (null for non-PDF)
+    rects: list[BBox] | None  # tight rectangles for the snippet
 
 
 class SearchResponse(BaseModel):

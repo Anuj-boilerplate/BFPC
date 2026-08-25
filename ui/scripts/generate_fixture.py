@@ -55,7 +55,7 @@ def main() -> None:
 
     hits = [
         {
-            "id": chunk.id,
+            "chunk_id": chunk.id,
             "text": text(chunk),
             "page": chunk.page,
             "kind": chunk.kind if chunk.kind in kinds else "text",
@@ -81,7 +81,7 @@ def main() -> None:
     print(f"wrote {OUT}")
     print(json.dumps(fixture["index"]))
     for hit in hits:
-        print(f"  p{hit['page']} [{hit['kind']:7s}] id={hit['id']} {hit['text'][:60]!r}")
+        print(f"  p{hit['page']} [{hit['kind']:7s}] chunk_id={hit['chunk_id']} {hit['text'][:60]!r}")
 
 
 if __name__ == "__main__":

@@ -27,10 +27,8 @@ export default function UploadScreen({ onIndexed, onToast, onBack }: UploadScree
   return (
     <main className="upload">
       <header className="upload__header">
-        <h1 className="upload__title">BFPC</h1>
-        <p className="upload__subtitle">
-          Blazing Fast PDF Companion — upload a document, ask a question, and get the answer highlighted right on the page.
-        </p>
+        <h1 className="upload__title upload__title--mark">BFPC</h1>
+        <p className="upload__subtitle">Blazing Fast PDF Companion</p>
       </header>
       <Dropzone busy={busy} onFile={handleFile} onToast={onToast} />
       {onBack && (

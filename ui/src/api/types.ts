@@ -42,7 +42,7 @@ export type StatusResponse = StatusIndexed | StatusEmpty
 
 /** One retrieval result (§5.2). */
 export interface Hit {
-  id: string
+  chunk_id: string
   text: string
   page: number
   kind: Kind

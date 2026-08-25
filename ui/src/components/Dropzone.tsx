@@ -39,7 +39,7 @@ export default function Dropzone({ busy, onFile, onToast }: DropzoneProps) {
 
   return (
     <div
-      className={`dropzone${dragging ? ' dropzone--drag' : ''}${busy ? ' dropzone--busy' : ''}`}
+      className={`dropzone glass brutal-interactive${dragging ? ' dropzone--drag' : ''}${busy ? ' dropzone--busy' : ''}`}
       role="button"
       tabIndex={0}
       aria-label="Upload a PDF document"
@@ -69,16 +69,16 @@ export default function Dropzone({ busy, onFile, onToast }: DropzoneProps) {
       {busy ? (
         <div className="dropzone__busy">
           <div className="spinner" aria-label="Indexing" />
-          <p className="dropzone__title">Indexing document…</p>
+          <p className="dropzone__title">Processing...</p>
           <p className="dropzone__hint">It is being parsed, chunked, embedded, and indexed. The first run also loads the embedding model, so this can take a minute.</p>
         </div>
       ) : (
         <>
-          <svg className="dropzone__icon" viewBox="0 0 24 24" width="44" height="44" aria-hidden="true">
+          <svg className="dropzone__icon" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
             <path d="M12 16V4m0 0 5 5m-5-5-5 5M5 20h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="dropzone__title">Drop a PDF here, or click to browse</p>
-          <p className="dropzone__hint">It will be indexed for instant retrieval, and answers will be highlighted directly in the document.</p>
+          <p className="dropzone__title">Drop a PDF, Markdown, or Word file</p>
+          <p className="dropzone__hint">or click to browse</p>
         </>
       )}
     </div>

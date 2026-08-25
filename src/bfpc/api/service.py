@@ -118,7 +118,7 @@ class IndexService:
         for hit in hits:
             results.append(
                 {
-                    "id": hit.chunk.id,
+                    "chunk_id": hit.chunk.id,
                     "text": hit.chunk.text,
                     "page": hit.chunk.page,
                     "kind": hit.chunk.kind,
@@ -141,14 +141,16 @@ class IndexService:
         if state.source != "pdf" or hit.chunk.bbox is None:
             return {}
         try:
-            from bfpc.index.locator import locate_text
+            from bfpc.index.locator import locate_text, locate_words
             from bfpc.index.sentence_ranker import rank_sentences
 
             ranked = rank_sentences(query, hit.chunk.text, top_n=1)
             if not ranked:
                 return {}
             snippet = ranked[0]
-            rects_raw = locate_text(state.raw, hit.chunk.page, snippet)
+            rects_raw = locate_words(state.raw, hit.chunk.page, snippet)
+            if not rects_raw:
+                rects_raw = locate_text(state.raw, hit.chunk.page, snippet)
             return {"snippet": snippet, "rects": [list(r) for r in rects_raw] if rects_raw else None}
         except Exception:
             return {}

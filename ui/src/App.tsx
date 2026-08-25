@@ -15,12 +15,12 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const toastTimeoutRef = useRef<number | null>(null)
 
-  const toast = useCallback((message: string) => {
+  const toast = useCallback((message: string, variant: 'error' | 'success' = 'error') => {
     if (toastTimeoutRef.current) {
       window.clearTimeout(toastTimeoutRef.current)
     }
     const id = Date.now() + Math.random()
-    setToasts((current) => [...current, { id, message }])
+    setToasts((current) => [...current, { id, message, variant }])
     toastTimeoutRef.current = window.setTimeout(() => {
       setToasts([])
       toastTimeoutRef.current = null

@@ -1,8 +1,8 @@
 """BFPC local HTTP API.
 
 Implements the contract in ``docs/api.md`` exactly: four endpoints over a
-single active document, with the block chunker, nomic-embed-text-v1.5 and
-an exact-cosine FAISS index.
+single active document, with the block chunker, the Gemini embedding API
+and an exact-cosine FAISS index.
 """
 
 from __future__ import annotations
