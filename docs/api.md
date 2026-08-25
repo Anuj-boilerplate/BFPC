@@ -20,6 +20,7 @@ document is silent, nothing is guaranteed.
 | POST   | `/api/index`     | Upload + parse + chunk + embed + index a document |
 | GET    | `/api/status`    | Query the currently indexed document       |
 | POST   | `/api/search`    | Vector search over the active document     |
+| POST   | `/api/answer`    | Answer question with evidence trail        |
 | GET    | `/api/document`  | Download the raw bytes of the active document |
 
 ---
@@ -310,14 +311,88 @@ Download the raw bytes of the active document.
   local model is loaded or downloaded.
 - Server runs on `127.0.0.1:8000`; CORS allows origin
   `http://localhost:5173` (and `http://127.0.0.1:5173`).
-- The endpoint set is exactly the four listed in §1. No other endpoints are
+- The endpoint set is exactly the five listed in §1. No other endpoints are
   part of this contract.
 - Requests are handled serially (single active document); concurrent
   requests are not part of the contract.
 
 ---
 
-## 8. Conformance checklist (must all hold)
+## 8. `POST /api/answer`
+
+Runs the full answer pipeline (retrieval → context → LLM → completeness
+check → trail) over the active document.
+
+### 8.1 Request body
+
+```json
+{
+  "query": "What is the latency of the INT8 static quantized ONNX model?"
+}
+```
+
+Field contract:
+
+| Field   | Type   | Required | Constraints |
+|---------|--------|----------|-------------|
+| `query` | string | yes      | Non-empty after trimming; whitespace-only is invalid (422) |
+
+Unknown fields → 422.
+
+### 8.2 Response — 200
+
+```json
+{
+  "query": "What is the latency ...?",
+  "answer": "The INT8 model achieves 18.48 ms ...",
+  "status": "COMPLETE",
+  "missing": null,
+  "trail": [
+    {
+      "source_id": "SOURCE_2",
+      "label": "Context",
+      "explanation": "2 INT8 (Static Quantization + ORT) ...",
+      "page": 12,
+      "rects": [[45.0, 523.5, 60.1, 535.8]]
+    }
+  ]
+}
+```
+
+Field contract:
+
+| Field    | Type                         | Notes |
+|----------|------------------------------|-------|
+| `query`  | string                       | Echo of the trimmed request `query` |
+| `answer` | string                       | LLM answer text |
+| `status` | `"COMPLETE"` \| `"INSUFFICIENT_EVIDENCE"` | Completeness verdict |
+| `missing`| string \| null               | Null when `COMPLETE`; human-readable gap when `INSUFFICIENT_EVIDENCE` |
+| `trail`  | array of trail item          | Ordered reading trail; may be `[]` when `result.nodes` is empty |
+
+**Trail item:**
+
+| Field       | Type                               | Notes |
+|-------------|------------------------------------|-------|
+| `source_id` | string                             | e.g. `"SOURCE_3"` |
+| `label`     | string                             | Human label: `Context`, `Evidence`, `Definition`, `Example`, `Conclusion` |
+| `explanation` | string                           | Best sentence from the source chunk w.r.t. the answer |
+| `page`      | int                                | 1-based page number |
+| `rects`     | `[[x0,y0,x1,y1], ...]`              | Word-precise rects in PDF points (§5.4); `[]` for non-PDF or when localization fails |
+
+`rects` coordinate system is identical to §5.4.
+
+### 8.3 Errors
+
+| Condition          | Code | `detail` contains |
+|--------------------|------|-------------------|
+| No active document | 409  | —                 |
+| Blank `query`      | 422  | —                 |
+| Malformed JSON     | 422  | —                 |
+| Internal failure   | 500  | —                 |
+
+---
+
+## 9. Conformance checklist (must all hold)
 
 1. `GET /api/status` always returns 200 with the exact shapes of §4.
 2. Searching before any successful index returns 409.

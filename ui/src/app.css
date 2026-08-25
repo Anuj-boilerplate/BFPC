@@ -861,3 +861,213 @@ button {
 .querybar__input:focus-visible {
   outline: none;
 }
+
+/* ================================================================== */
+/* Phase 10-12 — Answer panel + trail + split viewer                   */
+/* ================================================================== */
+
+.viewer__body--split {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+}
+
+.viewer__answer-column {
+  flex: 0 0 38%;
+  max-width: 480px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  overflow: auto;
+  border-right: var(--border-width) solid var(--border-brutal);
+  background: rgba(28, 25, 22, 0.6);
+}
+
+/* Query bar inside answer column: override fixed positioning */
+.viewer__answer-column .querybar {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  z-index: auto;
+}
+
+.viewer__answer-column .querybar--focused,
+.viewer__answer-column .querybar--searching,
+.viewer__answer-column .querybar:active {
+  transform: none;
+}
+
+.viewer__pdf-column {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--bg-deep);
+}
+
+.viewer__placeholder {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.viewer__placeholder-text {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+/* Answer panel */
+.answer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.answer-panel__answer {
+  padding: 16px 18px;
+  border-radius: var(--radius-panel);
+}
+
+.answer-panel__text {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.answer-panel__banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-panel);
+  border: var(--border-width) solid var(--accent-terra);
+  background: rgba(196, 122, 82, 0.12);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.answer-panel__banner-icon {
+  font-size: 16px;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.answer-panel__trail {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+}
+
+.answer-panel__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius-panel);
+  border: var(--border-width) solid var(--glass-border);
+  background: var(--bg-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.answer-panel__item--active {
+  border-color: var(--accent-terra);
+  box-shadow: var(--shadow-brutal);
+  transform: translate(-1px, -1px);
+}
+
+.answer-panel__item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.answer-panel__number {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--accent-terra);
+}
+
+.answer-panel__label {
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.answer-panel__source {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.answer-panel__explanation {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.answer-panel__view {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-solid);
+  color: var(--accent-terra);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.answer-panel__view:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-terra);
+}
+
+.answer-panel__empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+}
+
+@media (max-width: 860px) {
+  .viewer__body--split {
+    flex-direction: column;
+  }
+
+  .viewer__answer-column {
+    flex: none;
+    max-width: none;
+    min-width: 0;
+    border-right: none;
+    border-bottom: var(--border-width) solid var(--border-brutal);
+    max-height: 45vh;
+  }
+
+  .viewer__pdf-column {
+    flex: 1;
+  }
+}

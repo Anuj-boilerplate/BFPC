@@ -38,6 +38,8 @@ from bfpc.context.factory import PROVIDERS, create_generator
 from bfpc.context.gemini_generator import GeminiGenerator
 from bfpc.context.mock_generator import MockGenerator
 from bfpc.context.pipeline import DEFAULT_MAX_EVIDENCE, AnswerPipeline
+from bfpc.context.trail import ReadingTrail, TrailItem
+from bfpc.context.trail_builder import build_trail
 
 __all__ = [
     "DEFAULT_MAX_EVIDENCE",
@@ -58,8 +60,11 @@ __all__ = [
     "LLMContext",
     "MalformedRetrievalResult",
     "MockGenerator",
+    "ReadingTrail",
     "Source",
+    "TrailItem",
     "TrailReport",
+    "build_trail",
     "check",
     "create_generator",
 ]

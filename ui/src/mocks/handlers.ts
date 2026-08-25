@@ -164,6 +164,54 @@ export function createHandlers(
       return HttpResponse.json({ query, top_k: topK, hits: state.hits.slice(0, topK) })
     }),
 
+    // POST /api/answer (§8).
+    http.post(`${base}/api/answer`, async ({ request }) => {
+      if (!state.indexed) {
+        return HttpResponse.json({ detail: 'No active document indexed yet' }, { status: 409 })
+      }
+      let body: Record<string, unknown>
+      try {
+        body = (await request.json()) as Record<string, unknown>
+      } catch {
+        return HttpResponse.json({ detail: 'Request body is not valid JSON' }, { status: 422 })
+      }
+      const allowedAnswer = ['query']
+      const unknownAnswer = Object.keys(body).filter((key) => !allowedAnswer.includes(key))
+      if (unknownAnswer.length > 0) {
+        return HttpResponse.json({ detail: `Unknown field(s): ${unknownAnswer.join(', ')}` }, { status: 422 })
+      }
+      const query = typeof body.query === 'string' ? body.query.trim() : ''
+      if (!query) {
+        return HttpResponse.json({ detail: 'Query must be a non-empty string' }, { status: 422 })
+      }
+      // Build mock trail from first 3 hits
+      const trail = state.hits.slice(0, 3).map((hit, idx) => {
+        const labelMap: Record<string, string> = {
+          text: 'Context',
+          table: 'Evidence',
+          heading: 'Context',
+          list: 'Example',
+        }
+        const label = labelMap[hit.kind] ?? 'Evidence'
+        const explanation = hit.snippet ?? hit.text.split('. ')[0] ?? hit.text
+        const rects = hit.rects ?? (hit.bbox ? [hit.bbox] : [])
+        return {
+          source_id: `SOURCE_${idx + 1}`,
+          label,
+          explanation,
+          page: hit.page,
+          rects,
+        }
+      })
+      return HttpResponse.json({
+        query,
+        answer: `Mock answer for "${query}" — based on ${trail.length} sources.`,
+        status: 'COMPLETE',
+        missing: null,
+        trail,
+      })
+    }),
+
     // GET /api/document (§6).
     http.get(`${base}/api/document`, async () => {
       if (!state.indexed) {

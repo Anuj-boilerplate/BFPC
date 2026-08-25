@@ -60,3 +60,43 @@ class SearchResponse(BaseModel):
     query: str
     top_k: int
     hits: list[Hit]
+
+
+class AnswerRequest(BaseModel):
+    """Request body for ``POST /api/answer``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+
+    @field_validator("query")
+    @classmethod
+    def _query_not_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("query must not be blank")
+        return stripped
+
+
+class TrailItemResponse(BaseModel):
+    """One step in the reading trail (POST /api/answer)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    source_id: str
+    label: str
+    explanation: str
+    page: int
+    rects: list[BBox]
+
+
+class AnswerResponse(BaseModel):
+    """Response body for ``POST /api/answer``."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    query: str
+    answer: str
+    status: str  # "COMPLETE" | "INSUFFICIENT_EVIDENCE"
+    missing: str | None
+    trail: list[TrailItemResponse]

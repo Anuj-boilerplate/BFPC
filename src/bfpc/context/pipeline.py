@@ -60,6 +60,9 @@ class AnswerPipeline:
         self._generator = generator
         self._builder = builder if builder is not None else ContextBuilder()
         self._max_evidence = max_evidence
+        self._last_context: LLMContext | None = None
+        # Alias for spec compatibility
+        self._context_last: LLMContext | None = None
 
     def answer(self, query: str) -> TrailReport:
         """Run the loop; always returns a terminal :class:`TrailReport`.
@@ -70,6 +73,8 @@ class AnswerPipeline:
         results = self._retriever.search(query, self._builder.top_k)
         initial_hits = results.get("hits", [])
         context: LLMContext = self._builder.build(initial_hits)
+        self._last_context = context
+        self._context_last = context
         trail: TrailReport = self._coerce_trail(self._generator.generate(query, context))
         final_context = context
 
@@ -99,6 +104,8 @@ class AnswerPipeline:
                         )
                         trail = new_trail
                         final_context = expanded_context
+                        self._last_context = expanded_context
+                        self._context_last = expanded_context
                     # else keep original trail/context
 
         # Phase 9 deterministic checker (uses final context actually sent to LLM)
@@ -189,6 +196,8 @@ class AnswerPipeline:
             [*initial_hits, *targeted_hits]
         )
         new_trail = self._coerce_trail(self._generator.generate(query, expanded_context))
+        self._last_context = expanded_context
+        self._context_last = expanded_context
         # Stash context for callers that rely on _expand's side channel
         # (pipeline.answer now tracks this directly, so this is best-effort).
         try:

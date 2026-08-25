@@ -1,7 +1,7 @@
 import { expect, type Page, type Request, type Response } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import type { Hit, SearchResponse } from '../../src/api/types'
+import type { AnswerResponse, BBox, Hit, SearchResponse } from '../../src/api/types'
 
 export const API_BASE = 'http://127.0.0.1:8000'
 
@@ -52,17 +52,54 @@ export async function ensureIndexed(page: Page, name: string): Promise<void> {
   await uploadPdf(page, name)
 }
 
-/** Ask a question through the UI; returns the parsed /api/search response. */
+/** Ask a question through the UI; returns the parsed /api/search response.
+ *  After Phase 12 the UI calls /api/answer; this helper waits for either endpoint
+ *  and synthesizes a SearchResponse from an AnswerResponse when needed so
+ *  existing e2e assertions keep passing.
+ */
 export async function ask(page: Page, query: string): Promise<SearchResponse> {
   const [res] = await Promise.all([
-    page.waitForResponse((r: Response) => r.url().includes('/api/search') && r.request().method() === 'POST'),
+    page.waitForResponse(
+      (r: Response) =>
+        (r.url().includes('/api/search') || r.url().includes('/api/answer')) &&
+        r.request().method() === 'POST',
+    ),
     (async () => {
       await page.getByLabel('Question').fill(query)
       await page.getByRole('button', { name: 'Ask' }).click()
     })(),
   ])
   expect(res.status()).toBe(200)
-  return (await res.json()) as SearchResponse
+  const body = (await res.json()) as unknown
+  // If it's an AnswerResponse (has `answer` and `trail`), synthesize hits
+  if (body && typeof body === 'object' && 'trail' in body && Array.isArray((body as { trail: unknown }).trail)) {
+    const ans = body as { query: string; trail: Array<{ source_id: string; explanation: string; page: number; rects: BBox[] }> }
+    const hits = ans.trail.map((t, idx) => ({
+      chunk_id: `${idx}-${t.source_id}`,
+      text: t.explanation,
+      page: t.page,
+      kind: 'text' as const,
+      score: 1 - idx * 0.1,
+      bbox: t.rects[0] ?? null,
+      snippet: t.explanation,
+      rects: t.rects.length > 0 ? t.rects : null,
+    }))
+    return { query: ans.query, top_k: hits.length, hits } as SearchResponse
+  }
+  return body as SearchResponse
+}
+
+/** Ask via the new answer endpoint and return the raw AnswerResponse. */
+export async function askAnswer(page: Page, query: string): Promise<AnswerResponse> {
+  const [res] = await Promise.all([
+    page.waitForResponse((r: Response) => r.url().includes('/api/answer') && r.request().method() === 'POST'),
+    (async () => {
+      await page.getByLabel('Question').fill(query)
+      await page.getByRole('button', { name: 'Ask' }).click()
+    })(),
+  ])
+  expect(res.status()).toBe(200)
+  return (await res.json()) as import('../../src/api/types').AnswerResponse
 }
 
 export interface HighlightInfo {

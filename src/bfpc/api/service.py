@@ -82,9 +82,11 @@ class IndexState:
 class IndexService:
     """Single-active-document orchestrator over chunk/embed/index/search."""
 
-    def __init__(self, embedder) -> None:
+    def __init__(self, embedder, pipeline=None) -> None:
         self._embedder = embedder
         self._state: IndexState | None = None
+        # Lazily created AnswerPipeline (Phase 10); injectable for tests
+        self._pipeline = pipeline
 
     # -- queries -----------------------------------------------------------
 
@@ -130,6 +132,57 @@ class IndexService:
                 | self._locate(hit, query, state)
             )
         return {"query": query, "top_k": top_k, "hits": results}
+
+    def answer(self, query: str) -> dict:
+        """Run the full answer pipeline over the active document (Phase 10/11)."""
+        state = self._state
+        if state is None:
+            raise NoActiveDocument("no document indexed yet")
+        # Lazily create pipeline if not injected (tests may inject mock)
+        if self._pipeline is None:
+            from bfpc.context.factory import create_generator
+            from bfpc.context.pipeline import AnswerPipeline
+
+            try:
+                generator = create_generator()
+            except Exception as exc:
+                raise IndexFailed(f"failed to create generator: {exc}") from exc
+            self._pipeline = AnswerPipeline(retriever=self, generator=generator)
+
+        trail_report = self._pipeline.answer(query)
+        result = trail_report.result
+        # Retrieve the LLMContext used for the last pipeline call
+        context = getattr(self._pipeline, "_last_context", None)
+        if context is None:
+            context = getattr(self._pipeline, "_context_last", None)
+        if context is None:
+            from bfpc.context.builder import ContextBuilder
+
+            context = ContextBuilder().build([])
+
+        from bfpc.context.trail_builder import build_trail
+
+        # Only PDF has highlightable rects; non-PDF yields [] via trail_builder
+        pdf_bytes = state.raw if state.source == "pdf" else None
+        trail = build_trail(result, context, pdf_bytes)
+
+        status = "COMPLETE" if trail_report.report.complete else "INSUFFICIENT_EVIDENCE"
+        return {
+            "query": query,
+            "answer": result.answer,
+            "status": status,
+            "missing": result.missing,
+            "trail": [
+                {
+                    "source_id": item.source_id,
+                    "label": item.label,
+                    "explanation": item.explanation,
+                    "page": item.page,
+                    "rects": item.rects,
+                }
+                for item in trail.items
+            ],
+        }
 
     @staticmethod
     def _locate(hit, query: str, state: IndexState) -> dict:

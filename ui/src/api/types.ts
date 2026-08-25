@@ -58,3 +58,19 @@ export interface SearchResponse {
   top_k: number
   hits: Hit[]
 }
+
+export interface TrailItem {
+  source_id: string
+  label: string
+  explanation: string
+  page: number
+  rects: BBox[]
+}
+
+export interface AnswerResponse {
+  query: string
+  answer: string
+  status: 'COMPLETE' | 'INSUFFICIENT_EVIDENCE'
+  missing: string | null
+  trail: TrailItem[]
+}

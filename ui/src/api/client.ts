@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './config'
-import type { IndexResponse, SearchResponse, StatusResponse } from './types'
+import type { AnswerResponse, IndexResponse, SearchResponse, StatusResponse } from './types'
 
 export type { BBox, Hit, IndexResponse, Kind, SearchResponse, Source, StatusEmpty, StatusIndexed, StatusResponse } from './types'
 
@@ -57,6 +57,15 @@ export function search(query: string, topK = 5): Promise<SearchResponse> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: query.trim(), top_k: topK }),
+  })
+}
+
+/** POST /api/answer (§8). Full pipeline answer with trail. */
+export function askQuestion(query: string): Promise<AnswerResponse> {
+  return requestJson('/api/answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: query.trim() }),
   })
 }
 

@@ -18,7 +18,7 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 
-from bfpc.api.schemas import SearchRequest, SearchResponse
+from bfpc.api.schemas import AnswerRequest, AnswerResponse, SearchRequest, SearchResponse
 from bfpc.api.service import (
     ApiError,
     IndexFailed,
@@ -100,6 +100,11 @@ def create_app(service: IndexService | None = None) -> FastAPI:
     async def search(payload: SearchRequest) -> dict:
         # Query embedding is model inference; keep it off the event loop.
         return await asyncio.to_thread(service.search, payload.query, payload.top_k)
+
+    @app.post("/api/answer", response_model=AnswerResponse)
+    async def answer(payload: AnswerRequest) -> dict:
+        # LLM call is I/O-bound; run off the event loop.
+        return await asyncio.to_thread(service.answer, payload.query)
 
     @app.get("/api/document")
     async def document() -> Response:
