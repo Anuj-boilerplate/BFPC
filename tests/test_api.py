@@ -21,6 +21,9 @@ from bfpc.api.service import IndexService
 _DIM = 64
 
 
+import zlib
+
+
 class FakeEmbedder:
     """Hash-based content embedding: identical texts -> identical vectors."""
 
@@ -34,7 +37,7 @@ class FakeEmbedder:
     def _vector(self, text: str) -> np.ndarray:
         vec = np.zeros(_DIM, dtype=np.float64)
         for token in re.findall(r"\w+", text.lower()):
-            vec[hash(token) % _DIM] += 1.0
+            vec[zlib.crc32(token.encode("utf-8")) % _DIM] += 1.0
         norm = np.linalg.norm(vec)
         return vec / norm if norm else np.zeros(_DIM, dtype=np.float64)
 

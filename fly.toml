@@ -1,0 +1,31 @@
+# Fly.io configuration for BFPC.
+# Deploy: fly launch (first time) or fly deploy (subsequent).
+# Secret:  fly secrets set GEMINI_API_KEY=your-key-here
+
+app = "bfpc"
+primary_region = "bom"   # Mumbai — closest to India
+
+[build]
+  # Uses the Dockerfile at repo root.
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Keep the machine running so the in-memory FAISS index survives between
+  # requests. Setting min_machines_running = 1 consumes one of the three
+  # free shared-cpu-1x VMs included in Fly.io's free allowance.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/status"
+    timeout = "10s"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

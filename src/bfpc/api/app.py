@@ -6,17 +6,26 @@ Endpoints (exactly the four from ``docs/api.md`` §1):
 - ``GET  /api/status``   current active document summary
 - ``POST /api/search``   vector search over the active document
 - ``GET  /api/document`` raw bytes of the active document
+
+In production the compiled React UI is served from ``ui/dist/`` via a
+``StaticFiles`` mount at ``/``. Set ``BFPC_STATIC_DIR`` to override the
+path (useful if the build output lands elsewhere). If the directory is
+absent the API starts normally — useful for local dev where Vite runs
+separately.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from bfpc.api.schemas import AnswerRequest, AnswerResponse, SearchRequest, SearchResponse
 from bfpc.api.service import (
@@ -28,14 +37,21 @@ from bfpc.api.service import (
     ZeroChunks,
 )
 
-#: Allowed dev origins (contract §7).
-_ALLOWED_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
+#: Allowed origins for CORS. In production requests come from the same
+#: origin (FastAPI serves the UI), so CORS is only needed in local dev.
+#: Add extra origins via the ``BFPC_CORS_ORIGINS`` env var (comma-separated).
+_DEV_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
+_extra = [o.strip() for o in os.environ.get("BFPC_CORS_ORIGINS", "").split(",") if o.strip()]
+_ALLOWED_ORIGINS: tuple[str, ...] = (*_DEV_ORIGINS, *_extra)
 
 #: Maximum accepted upload size (contract §3.3); enforced before parsing.
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 #: Serializes index replacement so a swap never interleaves (contract §7).
 _LOCK = asyncio.Lock()
+
+#: Root of the compiled React app. Override with ``BFPC_STATIC_DIR``.
+_STATIC_DIR = Path(os.environ.get("BFPC_STATIC_DIR", "ui/dist"))
 
 
 def create_app(service: IndexService | None = None) -> FastAPI:
@@ -119,6 +135,12 @@ def create_app(service: IndexService | None = None) -> FastAPI:
                 "Cache-Control": "no-store",
             },
         )
+
+    # In production the compiled React app lives in ui/dist/. Mount it last
+    # so /api/* routes take priority over the catch-all SPA handler.
+    # Absent in local dev (Vite runs separately on :5173).
+    if _STATIC_DIR.is_dir():
+        app.mount("/", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
 
     return app
 

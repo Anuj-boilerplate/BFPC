@@ -32,7 +32,7 @@ from bfpc.context.evidence import Claim, EvidenceResult
 _API_KEY_ENVS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 
 #: Default model when neither constructor nor ``LLM_MODEL`` says otherwise.
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.6-flash"
 
 #: Default API root; overridable for tests / proxies.
 DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
@@ -152,7 +152,7 @@ class GeminiGenerator(Generator):
         temperature: float = 0.2,
         retry_delays: Sequence[float] = RETRY_DELAYS,
     ) -> None:
-        """:param model: Gemini model name (e.g. ``gemini-2.5-flash``).
+        """:param model: Gemini model name (e.g. ``gemini-3.6-flash``).
         :param base_url: API root; override for tests or proxies.
         :param api_key: defaults to the ``GEMINI_API_KEY`` env var.
         :param client: pre-built httpx client (tests); one is created otherwise.

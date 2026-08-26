@@ -1,3 +1,13 @@
+---
+title: BFPC
+emoji: 📄
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # BFPC
 
 Blazing Fast PDF Companion - parse documents into blocks, chunk them, embed

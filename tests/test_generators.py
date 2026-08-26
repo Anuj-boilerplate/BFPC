@@ -253,7 +253,7 @@ class TestGeminiGenerator:
         assert isinstance(result, (EvidenceResult, TrailReport))
         assert result.answer == "packet loss causes it"
         assert result.nodes == []
-        assert seen["url"] == f"{_BASE}/models/gemini-2.5-flash:generateContent"
+        assert seen["url"] == f"{_BASE}/models/gemini-3.6-flash:generateContent"
         assert seen["key"] == "test-key"
         payload = seen["payload"]
         assert payload["generationConfig"]["temperature"] == 0.2
@@ -755,7 +755,7 @@ class TestFactory:
         monkeypatch.delenv("LLM_MODEL", raising=False)
         generator = create_generator()
         assert isinstance(generator, GeminiGenerator)
-        assert generator._model == "gemini-2.5-flash"
+        assert generator._model == "gemini-3.6-flash"
 
     def test_provider_env_selects_mock(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("LLM_PROVIDER", "mock")

@@ -1,0 +1,30 @@
+# Files and directories that should never be sent to Docker.
+# Keeps the build context small and fast.
+
+# Python artefacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Node / UI artefacts (ui/dist is built inside Docker)
+ui/node_modules/
+ui/dist/
+
+# Dev and test files
+.env*
+experiments/
+tests/
+docs/
+*.md
+!README.md
+
+# Editor / OS
+.git/
+.gitignore
+*.swp
+.DS_Store

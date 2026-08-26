@@ -1,0 +1,74 @@
+[
+  {
+    "id": "eval-01-report-scope",
+    "query": "What is the full title of this report, and what does it say the report evaluates?",
+    "expectation": {
+      "relevant_pages": [1],
+      "distractor_pages_ok": true,
+      "notes": "The p1 title heading ('Optimized Local Ingestion and Thematic Motif Extraction Utilizing 768-Dimensional Embedding Architectures') plus the intro paragraph naming the four evaluated areas should be selected. Works-cited pages 16-20 and all tables must be excluded. A small graph (1-2 nodes) is fine; a heading node would sensibly carry role 'context' or 'conclusion'."
+    }
+  },
+  {
+    "id": "eval-02-matryoshka-truncation",
+    "query": "How much does index storage shrink when snowflake-arctic-embed-m embeddings are truncated from 768 to 256 dimensions?",
+    "expectation": {
+      "relevant_pages": [2],
+      "distractor_pages_ok": true,
+      "notes": "Single target passage on p2: truncating to 256 dims with snowflake-arctic-embed-m-v1.5 yields a 12x reduction in index size with under 2% retrieval degradation (via scalar quantization). The answer must contain '12x'. Exclude the p3 comparison-table rows (bge/gte have no Matryoshka support) and works cited; a good graph cites exactly one supporting node."
+    }
+  },
+  {
+    "id": "eval-03-q4km-latency",
+    "query": "Which runtime configuration reports an 18.48 ms single-insert latency, and what hardware is it matched to?",
+    "expectation": {
+      "relevant_pages": [12],
+      "distractor_pages_ok": true,
+      "notes": "Numeric needle in the quantization table: the Q4_K_M (llama.cpp GGUF) row on p12 - 74.40 MB file, 18.48 ms latency, 70-110 docs/sec, matched to commodity laptops / edge / IoT devices. The graph must pick THIS row and not confuse it with neighboring numbers on the same page (INT8 15.20 ms, FP16 4.76 ms, FP32 51.74 ms). Strong runs add a 'contrasts' relationship against the INT8 or FP16 row."
+    }
+  },
+  {
+    "id": "eval-04-int8-static-on-cpu",
+    "query": "What latency and throughput does static INT8 quantization reach on CPUs, and why does it suit multi-core server deployments?",
+    "expectation": {
+      "relevant_pages": [10, 11, 12],
+      "distractor_pages_ok": true,
+      "notes": "Multi-passage chain: p10 declares INT8 required for CPU-bound deployments (Dynamic vs Static PTQ); p11 has the calibration flow text '[PyTorch Model (FP32)] -> [Calibration Run] -> [Scale/Zero-Point Mapping] -> [Static INT8 Model]' plus thread-scaling/NUMA tuning; p12 table row gives INT8 = 104.75 MB, 15.20 ms latency, 457 inferences/sec on Multi-core CPU Server Nodes / Qualcomm DL2q. Expect several nodes linked by explains/follows_from edges. Distractors: works cited p20 and the Q4_K_M row."
+    }
+  },
+  {
+    "id": "eval-05-theme-extraction-stack",
+    "query": "After embeddings are produced, how are themes extracted - which projection, clustering, and labeling steps are used?",
+    "expectation": {
+      "relevant_pages": [7, 8, 9],
+      "distractor_pages_ok": true,
+      "notes": "Stage-wise selection expected: UMAP projection with n_neighbors/n_components (p7), HDBSCAN density clustering with min_cluster_size plus PDR/DDEO/PRM enhancements (p8), c-TF-IDF theme descriptors with bm25_weighting/reduce_frequent_words variants (p9). A good graph forms a pipeline-shaped chain (explains/follows_from across stages). Ingestion/chunking passages pp3-6 and quantization pp10-12 should be excluded."
+    }
+  },
+  {
+    "id": "eval-06-parser-fidelity",
+    "query": "Which PDF parsers preserve table structure most faithfully, and how fast does each one process pages?",
+    "expectation": {
+      "relevant_pages": [4, 5],
+      "distractor_pages_ok": true,
+      "notes": "The parser comparison table spans two chunks/pages: Docling 97.9% cell accuracy at 3.2 pages/sec, Marker 91.7% at 6.1, Unstructured.io ~75% at 4.8 (p4); PyMuPDF 0% at >12 pages/sec (spilling onto p5). Both fragments should be cited since the PyMuPDF row completes the comparison; p3 Docling/TableFormer background may appear as context. Embedding-model tables pp2-3 are distractors."
+    }
+  },
+  {
+    "id": "eval-07-license-pricing",
+    "query": "How much does a commercial license for nomic-embed-text-v1.5 cost per year?",
+    "expectation": {
+      "relevant_pages": [],
+      "distractor_pages_ok": true,
+      "notes": "Corpus gap probe: only license TYPES exist (Apache 2.0 in the p2/p3 model table); there is no pricing anywhere. A good run selects at most the license-type row as context, declines to invent a price, and leans INSUFFICIENT (answer saying the document does not say). Flag any run that fabricates dollar figures or confidently cites unrelated passages as 'supporting'."
+    }
+  },
+  {
+    "id": "eval-08-kubernetes-deployment",
+    "query": "How should this pipeline be deployed on Kubernetes with autoscaling?",
+    "expectation": {
+      "relevant_pages": [],
+      "distractor_pages_ok": true,
+      "notes": "Absent topic: nothing about containers, Kubernetes, autoscaling, or cloud deployment exists in the document. Nearest material is CPU/NUMA tuning on p11, but that is not about K8s and should not be presented as an answer. Expect weak-to-empty selection, few or zero nodes, and an honest refusal leaning INSUFFICIENT. A confident multi-node graph here is a failure mode."
+    }
+  }
+]

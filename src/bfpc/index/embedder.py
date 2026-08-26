@@ -6,13 +6,17 @@ Matryoshka truncations). Documents are embedded with
 Gemini's replacement for the instruction prefixes nomic-embed-text used.
 Configuration comes from the environment:
 
-- ``GEMINI_API_KEY``  (required; ``GOOGLE_API_KEY`` accepted as a fallback)
-- ``BFPC_EMBED_MODEL``   (default ``gemini-embedding-001``)
-- ``BFPC_EMBED_BASE_URL`` (default ``https://generativelanguage.googleapis.com/v1beta``)
+- ``GEMINI_API_KEY``       (required; ``GOOGLE_API_KEY`` accepted as a fallback)
+- ``BFPC_EMBED_MODEL``     (default ``gemini-embedding-001``)
+- ``BFPC_EMBED_BASE_URL``  (default ``https://generativelanguage.googleapis.com/v1beta``)
+- ``BFPC_EMBED_BATCH_DELAY`` (seconds to sleep between batches; default ``0.65``)
 
 The client is pure HTTP (``httpx``): no local model, no download, no
 torch. Up to ``MAX_BATCH`` texts go in one ``:batchEmbedContents`` call;
-transient failures retry with backoff.
+transient failures retry with backoff. A configurable inter-batch delay
+keeps multi-batch index calls comfortably under the 100 RPM free-tier
+limit. On 429 responses the ``Retry-After`` header is respected when
+present so retries don't fire too early.
 """
 
 from __future__ import annotations
@@ -38,7 +42,14 @@ OUTPUT_DIMENSIONALITY = 3072
 #: Max content parts per :batchEmbedContents call (API limit).
 MAX_BATCH = 100
 
+#: Seconds to sleep between successive batches during a single embed_documents
+#: call.  Keeps free-tier (100 RPM) users well clear of the rate limit without
+#: adding latency for single-batch documents.  Override with
+#: ``BFPC_EMBED_BATCH_DELAY=0`` to disable.
+INTER_BATCH_DELAY: float = float(os.environ.get("BFPC_EMBED_BATCH_DELAY", "0.65"))
+
 #: Backoff schedule (seconds) for rate limits and transient server errors.
+#: Used only when no ``Retry-After`` header is present on a 429 response.
 RETRY_DELAYS = (1.0, 2.0, 4.0)
 
 
@@ -78,6 +89,11 @@ class Embedder:
             return np.zeros((0, 0), dtype=np.float32)
         vectors: list[np.ndarray] = []
         for start in range(0, len(texts), MAX_BATCH):
+            # Sleep between batches to stay within the 100 RPM free-tier limit.
+            # The first batch never waits; subsequent batches pause for
+            # INTER_BATCH_DELAY seconds (default 0.65 s, ~92 RPM headroom).
+            if start > 0 and INTER_BATCH_DELAY > 0:
+                time.sleep(INTER_BATCH_DELAY)
             batch = texts[start : start + MAX_BATCH]
             payload = {
                 "requests": [
@@ -112,7 +128,11 @@ class Embedder:
                 return response.json()
             if response.status_code in (429, 500, 502, 503, 504):
                 if attempt < len(RETRY_DELAYS) - 1:
-                    time.sleep(delay)
+                    # Honour the API's own cooldown instruction when present;
+                    # fall back to the fixed backoff schedule otherwise.
+                    retry_after = response.headers.get("Retry-After")
+                    wait = float(retry_after) if retry_after is not None else delay
+                    time.sleep(wait)
                     continue
             raise RuntimeError(
                 f"Gemini embedding API error {response.status_code}: {response.text[:300]}"
